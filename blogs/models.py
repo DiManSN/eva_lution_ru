@@ -21,7 +21,6 @@ class Blog(models.Model):
         return self.title
 
     class Meta:
-        db_table = "blogs"
         verbose_name = "Блог"
         verbose_name_plural = "Блоги"
 
