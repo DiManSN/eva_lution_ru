@@ -63,7 +63,17 @@ class User(AbstractBaseUser):
     settings_notice_new_message = models.BooleanField(default=1)
     settings_notice_reply_comment = models.BooleanField(default=1)
     settings_notice_new_comment_to_topic = models.BooleanField(default=1)
-    
+
+    REQUIRED_FIELDS = ['email']
+    USERNAME_FIELD = 'name'
+
+    def __str__(self):
+        return name
+
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+
 
 class Blog(models.Model):
     """Модель блогов."""
