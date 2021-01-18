@@ -1,11 +1,42 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import BaseUserManager
 from datetime import date
 
 
+class UserAccountManager(BaseUserManager):
+    """Менеджер пользователей для расширенной модели пользователей"""
+    def _create_user(self, username, email, password, **extra_fields):
+        if not username:
+            raise ValueError('Необходимо указать имя пользователя')
+        if not email:
+            raise ValueError('Необходимо указать адрес электронной почты')
+        username = self.model.normalize_username(username)
+        email = self.normalize_email(email)
+        user = self.model(
+            email=email, username=username, **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(username, email, password, **extra_fields)
+
+    def create_superuser(self, username, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        if extra_fields.get('is_staff') is not True:
+            rase ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            rase ValueError('Superuser must have is_superuser=True.')
+        return self._create_user(username, email, password, **extra_fields)
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     """Расширенная модель пользователей."""
     MALE = "Male"
     FEMALE = "Female"
@@ -14,7 +45,7 @@ class User(AbstractBaseUser):
         (FEMALE, "Женский")
     ]
 
-    name = models.CharField(
+    username = models.CharField(
         max_lenght=200,
         unique=True,
         blank=False,
@@ -26,9 +57,9 @@ class User(AbstractBaseUser):
     first_name = models.CharField(max_lenght=50, null=True)
     last_name = models.CharField(max_lenght=50, null=True)
     permissions = models.CharField(max_lenght=255)
-    is_staff = models.BooleanField(default=0)
-    is_active = models.BooleanField(default=0)
-    is_superuser = models.BooleanField(default=0)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_superuser = models.BooleanField(default=False)
     last_login = models.DateField(
         auto_now=True, verbose_name="Дата последнего посещения"
     )
@@ -58,17 +89,22 @@ class User(AbstractBaseUser):
     profile_avatar = models.ImageField(
         upload_to='uploads/images/%Y/%m/%d/', max_lenght=250, null=True
     )
-    settings_notice_new_topic = models.BooleanField(default=1)
-    settings_notice_new_comment = models.BooleanField(default=1)
-    settings_notice_new_message = models.BooleanField(default=1)
-    settings_notice_reply_comment = models.BooleanField(default=1)
-    settings_notice_new_comment_to_topic = models.BooleanField(default=1)
+    settings_notice_new_topic = models.BooleanField(default=True)
+    settings_notice_new_comment = models.BooleanField(default=True)
+    settings_notice_new_message = models.BooleanField(default=True)
+    settings_notice_reply_comment = models.BooleanField(default=True)
+    settings_notice_new_comment_to_topic = models.BooleanField(default=True)
 
     REQUIRED_FIELDS = ['email']
-    USERNAME_FIELD = 'name'
+    USERNAME_FIELD = 'username'
+
+    objects = UserAccountManager()
+
+    def get_short_name(self):
+        return self.username
 
     def __str__(self):
-        return name
+        return username
 
     class Meta:
         verbose_name = "Пользователь"
@@ -117,8 +153,8 @@ class Topic(models.Model):
     date_add = models.DateField(auto_now_add=True, verbose_name="Дата создания")
     date_edit = models.DateField(auto_now=True, verbose_name="Дата изменения")
     author_ip = models.GenericIPAddressField()
-    is_published = models.BooleanField(default=1)
-    is_delete = models.BooleanField(default=0)
+    is_published = models.BooleanField(default=True)
+    is_delete = models.BooleanField(default=False)
     rating = models.DecimalField(max_digits=9, decimal_places=3, default=0)
     views = models.PositiveIntegerField(
         default=0, verbose_name="Количество просмотров"
@@ -174,8 +210,8 @@ class Comment(models.Model):
     votes_minus = models.PositiveIntegerField(
         default=0, verbose_name="Количество отрицательных голосов"
     )
-    is_published = models.BooleanField(default=1)
-    is_delete = models.BooleanField(default=0)
+    is_published = models.BooleanField(default=True)
+    is_delete = models.BooleanField(default=False)
 
     def __str__(self):
         return self.text
