@@ -15,18 +15,18 @@ class UserAccountManager(BaseUserManager):
         username = self.model.normalize_username(username)
         email = self.normalize_email(email)
         user = self.model(
-            email=email, username=username, **extra_fields
+            username=username, email=email, **extra_fields
         )
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, username, email, password, **extra_fields):
+    def create_user(self, username, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
         return self._create_user(username, email, password, **extra_fields)
 
-    def create_superuser(self, username, email, password, **extra_fields):
+    def create_superuser(self, username, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         if extra_fields.get('is_staff') is not True:
@@ -41,12 +41,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     MALE = "Male"
     FEMALE = "Female"
     TARGET_TYPE_CHOICES = [
-        (MALE, "Мужской")
+        (MALE, "Мужской"),
         (FEMALE, "Женский")
     ]
 
     username = models.CharField(
-        max_lenght=200,
+        max_length=200,
         unique=True,
         blank=False,
         verbose_name="Имя(логин) пользователя"
@@ -54,49 +54,45 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         unique=True, blank=False, verbose_name="Электронная почта"
     )
-    first_name = models.CharField(max_lenght=50, null=True)
-    last_name = models.CharField(max_lenght=50, null=True)
-    permissions = models.CharField(max_lenght=255)
-    is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_superuser = models.BooleanField(default=False)
-    last_login = models.DateField(
+    first_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, null=True)
+    permissions = models.CharField(max_length=255, null=True)
+    is_staff = models.BooleanField(default=0)
+    is_active = models.BooleanField(default=1)
+    is_superuser = models.BooleanField(default=0)
+    last_login = models.DateTimeField(
         auto_now=True, verbose_name="Дата последнего посещения"
     )
-    date_joined = models.DateField(
+    date_joined = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата создания профиля"
     )
-    date_activated = models.DateField(
+    date_activated = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата активации профиля"
     )
-    ip_register = models.GenericIPAddressField()
-    skill = models.DecimalField(max_digits=9, decimal_places=3, default=0)
-    rating = models.DecimalField(max_digits=9, decimal_places=3, default=0)
+    # ip_register = models.GenericIPAddressField(null=True)
+    skill = models.DecimalField(max_digits=9, decimal_places=2, default=0.00)
+    rating = models.DecimalField(max_digits=9, decimal_places=2, default=0.00)
     count_vote = models.PositiveIntegerField(default=0)
-    activate_key = models.CharField(max_lenght=32, null=True, default='NULL')
-    inviter = models.ForeignKey(
-        self,
-        on_delete=models.CASCADE,
-        null=True,
-        default='NULL'
-    )
-    profile_sex = models.CharField(max_lenght=10, choices=TARGET_TYPE_CHOICES)
-    profile_country = models.CharField(max_lenght=30, null=True, default="NULL")
-    profile_region = models.CharField(max_lenght=30, null=True, default="NULL")
-    profile_city = models.CharField(max_lenght=30, null=True, default="NULL")
-    profile_birthday = models.DateField(null=True, default="NULL")
+    activate_key = models.CharField(max_length=32, null=True, default="NULL")
+    inviter = models.CharField(max_length=10, null=True, default="NULL")
+    profile_sex = models.CharField(max_length=10, choices=TARGET_TYPE_CHOICES)
+    profile_country = models.CharField(max_length=30, null=True, default="NULL")
+    profile_region = models.CharField(max_length=30, null=True, default="NULL")
+    profile_city = models.CharField(max_length=30, null=True, default="NULL")
+    profile_birthday = models.DateField(blank=True, null=True, default=None)
     profile_about = models.TextField(null=True, default="NULL")
     profile_avatar = models.ImageField(
-        upload_to='uploads/images/%Y/%m/%d/', max_lenght=250, null=True
+        upload_to='uploads/images/%Y/%m/%d/', max_length=250, null=True
     )
-    settings_notice_new_topic = models.BooleanField(default=True)
-    settings_notice_new_comment = models.BooleanField(default=True)
-    settings_notice_new_message = models.BooleanField(default=True)
-    settings_notice_reply_comment = models.BooleanField(default=True)
-    settings_notice_new_comment_to_topic = models.BooleanField(default=True)
+    settings_notice_new_topic = models.BooleanField(default=1)
+    settings_notice_new_comment = models.BooleanField(default=1)
+    settings_notice_new_message = models.BooleanField(default=1)
+    settings_notice_reply_comment = models.BooleanField(default=1)
+    settings_notice_new_comment_to_topic = models.BooleanField(default=1)
 
     REQUIRED_FIELDS = ['email']
     USERNAME_FIELD = 'username'
+    EMAIL_FIELD = 'email'
 
     objects = UserAccountManager()
 
@@ -106,6 +102,22 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return username
 
+    # def has_perm(self, perm, obj=None):
+    #     "Does the user have a specific permission?"
+    #     # Simplest possible answer: Yes, always
+    #     return True
+    #
+    # def has_module_perms(self, app_label):
+    #     "Does the user have permissions to view the app `app_label`?"
+    #     # Simplest possible answer: Yes, always
+    #     return True
+    #
+    # @property
+    # def is_staff(self):
+    #     "Is the user a member of staff?"
+    #     # Simplest possible answer: All admins are staff
+    #     return self.is_admin
+
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
@@ -114,14 +126,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Blog(models.Model):
     """Модель блогов."""
     title = models.CharField(
-        max_lenght=200, unique=True, verbose_name="Название блога"
+        max_length=200, unique=True, verbose_name="Название блога"
     )
     description = models.TextField(null=True, verbose_name="Описание блога")
-    date_add = models.DateField(auto_now_add=True, verbose_name="Дата создания")
-    date_edit = models.DateField(auto_now=True, verbose_name="Дата изменения")
-    url = models.SlugField(max_lenght=200, unique=True)
+    date_add = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
+    date_edit = models.DateTimeField(
+        auto_now=True, verbose_name="Дата изменения"
+    )
+    url = models.SlugField(max_length=200, unique=True)
     avatar = models.ImageField(
-        upload_to='uploads/images/%Y/%m/%d/', max_lenght=250, null=True,
+        upload_to='uploads/images/%Y/%m/%d/', max_length=250, null=True,
         verbose_name="Аватарка"
     )
 
@@ -141,21 +157,23 @@ class Topic(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.PROTECT, verbose_name="Имя автора"
     )
-    title = models.CharField(
-        max_lenght=200, unique=True, verbose_name="Название поста"
-    )
+    title = models.CharField(max_length=200, verbose_name="Название поста")
     tags = models.CharField(
-        max_lenght=250,
+        max_length=250,
         default='',
         verbose_name="Список тегов(разделять запятой)"
     )
-    hashtag = models.CharField(max_lenght=50, default='')
-    date_add = models.DateField(auto_now_add=True, verbose_name="Дата создания")
-    date_edit = models.DateField(auto_now=True, verbose_name="Дата изменения")
+    hashtag = models.CharField(max_length=50, default='')
+    date_add = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
+    date_edit = models.DateTimeField(
+        auto_now=True, null=True, verbose_name="Дата изменения"
+    )
     author_ip = models.GenericIPAddressField()
-    is_published = models.BooleanField(default=True)
-    is_delete = models.BooleanField(default=False)
-    rating = models.DecimalField(max_digits=9, decimal_places=3, default=0)
+    is_published = models.BooleanField(default=1)
+    is_delete = models.BooleanField(default=0)
+    rating = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     views = models.PositiveIntegerField(
         default=0, verbose_name="Количество просмотров"
     )
@@ -186,7 +204,7 @@ class Comment(models.Model):
     """Модель комментариев."""
     TOPIC = 'topic'
     TALK = 'talk'
-    TARGET_TYPE_CHOICES[
+    TARGET_TYPE_CHOICES = [
         (TOPIC, "Комментарий к топику"),
         (TALK, "Личное сообщение")
     ]
@@ -194,24 +212,28 @@ class Comment(models.Model):
     pid = models.PositiveIntegerField(null=True)
     target_id = models.PositiveIntegerField()
     target_type = models.CharField(
-        max_lenght=10, choices=TARGET_TYPE_CHOICES
+        max_length=10, choices=TARGET_TYPE_CHOICES
     )
     target_blog_id = models.PositiveIntegerField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
-    date_add = models.DateField(auto_now_add=True, verbose_name="Дата создания")
-    date_edit = models.DateField(auto_now=True, verbose_name="Дата изменения")
-    last_editor_id = models.PositiveIntegerField()
+    date_add = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
+    date_edit = models.DateTimeField(
+        auto_now=True, null=True, verbose_name="Дата изменения"
+    )
+    last_editor_id = models.PositiveIntegerField(null=True)
     author_ip = models.GenericIPAddressField()
-    rating = models.DecimalField(max_digits=9, decimal_places=3, default=0)
+    rating = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     votes_plus = models.PositiveIntegerField(
         default=0, verbose_name="Количество положительных голосов"
     )
     votes_minus = models.PositiveIntegerField(
         default=0, verbose_name="Количество отрицательных голосов"
     )
-    is_published = models.BooleanField(default=True)
-    is_delete = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=1)
+    is_delete = models.BooleanField(default=0)
 
     def __str__(self):
         return self.text
@@ -221,16 +243,16 @@ class Comment(models.Model):
         verbose_name_plural = "Комментарии"
 
 
-    class Tag(models.Model):
-        """Модель тегов"""
-        topic_id = models.ForeignKey(Topic, on_delete=models.CASCADE)
-        user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-        blog_id = models.ForeignKey(Blog, on_delete=models.CASCADE)
-        text = models.CharField(max_lenght=150, default='')
+class Tag(models.Model):
+    """Модель тегов"""
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    text = models.CharField(max_length=150, default='')
 
-        def __str__(self):
-            return self.text
+    def __str__(self):
+        return self.text
 
-        class Meta:
-            verbose_name = "Тег"
-            verbose_name_plural = "Теги"
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
