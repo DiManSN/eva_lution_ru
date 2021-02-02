@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Блоги</title>
+  </head>
+
+  <body>
+    {% for blog in blog_list %}
+        <img src="{{ blog.avatar }}"">
+        {% autoescape on %}
+        <h1>{{ blog.title|safe }}</h1>
+        {% endautoescape %}
+        <p>{{ blog.description }}</p>
+    {% endfor %}
+  </body>
+
+</html>

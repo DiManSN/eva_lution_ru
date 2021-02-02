@@ -82,7 +82,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_birthday = models.DateField(blank=True, null=True, default=None)
     profile_about = models.TextField(null=True, default="NULL")
     profile_avatar = models.ImageField(
-        upload_to='uploads/images/%Y/%m/%d/', max_length=250, null=True
+        upload_to='uploads/images/%Y/%m/%d/%H/%M/%S/', max_length=250, null=True
     )
     settings_notice_new_topic = models.BooleanField(default=1)
     settings_notice_new_comment = models.BooleanField(default=1)
@@ -137,7 +137,9 @@ class Blog(models.Model):
     )
     url = models.SlugField(max_length=200, unique=True)
     avatar = models.ImageField(
-        upload_to='uploads/images/%Y/%m/%d/', max_length=250, null=True,
+        upload_to='uploads/images/%Y/%m/%d/%H/%M/%S/',
+        max_length=250,
+        null=True,
         verbose_name="Аватарка"
     )
 
