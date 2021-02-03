@@ -17,9 +17,7 @@ class UserCreationForm(forms.ModelForm):
     """A form for creating new users. Includes all the required
     fields, plus a repeated password."""
     password1 = forms.CharField(label='Пароль', widget=forms.PasswordInput)
-    password2 = forms.CharField(
-        label='Подтверждение пароля', widget=forms.PasswordInput
-    )
+    password2 = forms.CharField(label='Подтверждение пароля', widget=forms.PasswordInput)
 
     class Meta:
         model = User
@@ -49,10 +47,7 @@ class UserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = (
-            'username', 'email', 'password', 'first_name', 'last_name',
-            'is_active', 'is_staff'
-        )
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_active', 'is_staff')
 
     def clean_password(self):
         # Regardless of what the user provides, return the initial value.
@@ -69,7 +64,7 @@ class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ('profile_avatar', 'username', 'email', 'is_staff')
+    list_display = ('username', 'email', 'is_staff')
     list_filter = ('username',)
     fieldsets = (
         (None, {'fields': ('username', 'password')}),

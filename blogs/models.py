@@ -13,9 +13,7 @@ class UserAccountManager(BaseUserManager):
             raise ValueError('Необходимо указать адрес электронной почты')
         username = self.model.normalize_username(username)
         email = self.normalize_email(email)
-        user = self.model(
-            username=username, email=email, **extra_fields
-        )
+        user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -37,13 +35,6 @@ class UserAccountManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """Расширенная модель пользователей."""
-    MALE = 'Male'
-    FEMALE = 'Female'
-    TARGET_TYPE_CHOICES = [
-        (MALE, 'Мужской'),
-        (FEMALE, 'Женский')
-    ]
-
     username = models.CharField(max_length=200, unique=True, blank=False, verbose_name='Имя(логин) пользователя')
     email = models.EmailField(unique=True, blank=False, verbose_name='Электронная почта')
     first_name = models.CharField(max_length=50, null=True)
@@ -61,18 +52,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     count_vote = models.PositiveIntegerField(default=0)
     activate_key = models.CharField(max_length=32, null=True, default='NULL')
     inviter = models.CharField(max_length=10, null=True, default='NULL')
-    profile_sex = models.CharField(max_length=10, choices=TARGET_TYPE_CHOICES)
-    profile_country = models.CharField(max_length=30, null=True, default='NULL')
-    profile_region = models.CharField(max_length=30, null=True, default='NULL')
-    profile_city = models.CharField(max_length=30, null=True, default='NULL')
-    profile_birthday = models.DateField(blank=True, null=True, default=None)
-    profile_about = models.TextField(null=True, default='NULL')
-    profile_avatar = models.ImageField(upload_to='uploads/images/%Y/%m/%d/%H/%M/%S/', max_length=250, null=True)
-    settings_notice_new_topic = models.BooleanField(default=1)
-    settings_notice_new_comment = models.BooleanField(default=1)
-    settings_notice_new_message = models.BooleanField(default=1)
-    settings_notice_reply_comment = models.BooleanField(default=1)
-    settings_notice_new_comment_to_topic = models.BooleanField(default=1)
 
     REQUIRED_FIELDS = ['email']
     USERNAME_FIELD = 'username'
@@ -106,6 +85,40 @@ class User(AbstractBaseUser, PermissionsMixin):
     #     # Simplest possible answer: All admins are staff
     #     return self.is_admin
 
+class UserProfile(models.Model):
+    """Модель данных профиля пользователя."""
+    MALE = 'Male'
+    FEMALE = 'Female'
+    TARGET_TYPE_CHOICES = [
+        (MALE, 'Мужской'),
+        (FEMALE, 'Женский')
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, verbose_name='Пользователь')
+    sex = models.CharField(max_length=10, choices=TARGET_TYPE_CHOICES)
+    country = models.CharField(max_length=30, null=True, default='NULL')
+    region = models.CharField(max_length=30, null=True, default='NULL')
+    city = models.CharField(max_length=30, null=True, default='NULL')
+    birthday = models.DateField(blank=True, null=True, default=None)
+    about = models.TextField(null=True, default='NULL')
+    avatar = models.ImageField(upload_to='images/%Y/%m/%d/%H/%M/%S/', max_length=250, null=True)
+
+    class Meta:
+        db_table = 'blogs_user_profile'
+
+
+class UserSettingsNotice(models.Model):
+    """Модель настроек оповещений"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, verbose_name='Пользователь')
+    new_topic = models.BooleanField(default=1)
+    new_comment = models.BooleanField(default=1)
+    new_message = models.BooleanField(default=1)
+    reply_comment = models.BooleanField(default=1)
+    new_comment_to_topic = models.BooleanField(default=1)
+
+    class Meta:
+        db_table = 'blogs_user_settings_notice'
+
 
 class Blog(models.Model):
     """Модель блогов."""
@@ -115,7 +128,7 @@ class Blog(models.Model):
     date_edit = models.DateTimeField(auto_now=True, verbose_name='Дата изменения')
     url = models.SlugField(max_length=200, unique=True)
     avatar = models.ImageField(
-        upload_to='uploads/images/%Y/%m/%d/%H/%M/%S/', max_length=250, null=True, verbose_name='Аватарка'
+        upload_to='images/%Y/%m/%d/%H/%M/%S/', max_length=250, null=True, verbose_name='Аватарка'
     )
 
     class Meta:
@@ -144,8 +157,6 @@ class Topic(models.Model):
     votes_plus = models.PositiveIntegerField(default=0, verbose_name='Количество положительных голосов')
     votes_minus = models.PositiveIntegerField(default=0, verbose_name='Количество отрицательных голосов')
     comments_total = models.PositiveIntegerField(default=0, verbose_name='Количество комментариев')
-    text = models.TextField(verbose_name='Содержимое топика')
-    text_short = models.TextField(verbose_name='Краткое содержимое для превью')
 
     class Meta:
         verbose_name = 'Топик'
@@ -153,6 +164,16 @@ class Topic(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TopicContent(models.Model):
+    """Содержимое топиков"""
+    topic = models.OneToOneField(Topic, on_delete=models.CASCADE, primary_key=True, verbose_name='Топик')
+    text = models.TextField(verbose_name='Содержимое топика')
+    text_short = models.TextField(verbose_name='Краткое содержимое для превью')
+
+    class Meta:
+        db_table = 'blogs_topic_content'
 
 
 class Comment(models.Model):
